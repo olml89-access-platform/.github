@@ -1,0 +1,29 @@
+name: PR Automation
+
+on:
+  workflow_call:
+    secrets:
+      PR_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  synchronize:
+    name: Synchronize Issue fields to PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout central automation repository
+        uses: actions/checkout@v6
+        with:
+          repository: olml89-access-platform/.github
+          ref: main
+          path: .automation
+          persist-credentials: false
+
+      - name: Synchronize Project fields
+        uses: ./.automation/actions/pr-automation
+        with:
+          token: ${{ secrets.PR_TOKEN }}
