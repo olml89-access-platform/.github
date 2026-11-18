@@ -24,16 +24,16 @@ Technology choices are made according to the problem each component solves rathe
 
 ## Platform components
 
-| Component | Responsibility | Technology |
-|---|---|---|
-| `qr-api` | Core REST API and access-control domain | PHP / Symfony |
-| `qr-request-web` | Public interface for requesting access | TypeScript |
-| `qr-dashboard` | Management interface | TypeScript |
-| `qr-generator` | QR code generation | Go |
-| `qr-mailer` | Email delivery | Rust |
-| `qr-scanner-android` | QR scanning and access validation interface | Kotlin |
-| `qr-analytics` | Access-event processing and analytics | Python |
-| `qr-infrastructure` | Local infrastructure and service orchestration | Docker Compose |
+| Component            | Responsibility                                 | Technology     |
+| -------------------- | ---------------------------------------------- | -------------- |
+| `qr-api`             | Core REST API and access-control domain        | PHP / Symfony  |
+| `qr-request-web`     | Public interface for requesting access         | TypeScript     |
+| `qr-dashboard`       | Management interface                           | TypeScript     |
+| `qr-generator`       | QR code generation                             | Go             |
+| `qr-mailer`          | Email delivery                                 | Rust           |
+| `qr-scanner-android` | QR scanning and access validation interface    | Kotlin         |
+| `qr-analytics`       | Access-event processing and analytics          | Python         |
+| `qr-infrastructure`  | Local infrastructure and service orchestration | Docker Compose |
 
 ## Architecture
 
@@ -116,6 +116,6 @@ All repositories are hosted under the `olml89-access-platform` GitHub organizati
 
 ## Status
 
-The project is currently in **M1 — Foundation & Core API**.
+The project is currently in **M1: Foundation & Core API**.
 
 The first implementation focus is establishing the `qr-api` runtime, development environment and initial functional vertical slice.
