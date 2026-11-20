@@ -1,0 +1,17 @@
+name: PR Automation
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull Request number to synchronize
+        required: true
+        type: number
+
+jobs:
+  bootstrap:
+    name: Bootstrap workflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm manual dispatch
+        run: echo "Manual dispatch enabled for PR #${{ inputs.pr_number }}."
