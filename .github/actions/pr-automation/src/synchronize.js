@@ -99,7 +99,9 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
   if (!pullRequestItem) {
     console.log(`Adding PR #${pullRequest.number} to Project #${projectNumber}.`);
 
-    await addProjectItem(project.id, pullRequest.node_id);
+    const addedItem = await addProjectItem(project.id, pullRequest.node_id);
+
+    console.log(`Project item mutation returned: ${JSON.stringify(addedItem)}`);
 
     // Reload the Project items to obtain the actual PR item and field values.
     items = await fetchProjectItems(project.id);
@@ -107,6 +109,16 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
     pullRequestItem = items.find((item) => item.content?.id === pullRequest.node_id);
 
     if (!pullRequestItem) {
+      console.log(
+        `PR node ID: ${pullRequest.node_id}. ` +
+          `Project item IDs: ${JSON.stringify(
+            items.map((item) => ({
+              id: item.id,
+              contentId: item.content?.id ?? null,
+            })),
+          )}`,
+      );
+
       throw new Error(
         `PR #${pullRequest.number} was added but could not be retrieved from Project #${projectNumber}.`,
       );
