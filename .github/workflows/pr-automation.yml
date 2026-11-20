@@ -37,6 +37,6 @@ jobs:
           persist-credentials: false
 
       - name: Synchronize Project fields
-        uses: ./.automation/actions/pr-automation
+        uses: ./.automation/.github/actions/pr-automation
         with:
           token: ${{ secrets.PR_TOKEN }}
