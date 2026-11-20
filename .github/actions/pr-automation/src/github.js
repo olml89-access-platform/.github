@@ -50,6 +50,12 @@ async function getIssue({ owner, repo, number }) {
   );
 }
 
+async function getPullRequest({ owner, repo, number }) {
+  return request(
+    `${apiUrl}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${number}`,
+  );
+}
+
 async function addLabelsToIssue({ owner, repo, number, labels }) {
   if (!labels.length) {
     return [];
@@ -68,5 +74,6 @@ async function addLabelsToIssue({ owner, repo, number, labels }) {
 module.exports = {
   graphql,
   getIssue,
+  getPullRequest,
   addLabelsToIssue,
 };

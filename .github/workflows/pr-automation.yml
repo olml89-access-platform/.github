@@ -1,10 +1,23 @@
 name: PR Automation
 
 on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+
   workflow_call:
     secrets:
       PR_TOKEN:
         required: true
+
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull Request number to synchronize
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -19,7 +32,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: olml89-access-platform/.github
-          ref: main
+          ref: ${{ github.repository == 'olml89-access-platform/.github' && (github.event.pull_request.head.ref || github.ref) || 'main' }}
           path: .automation
           persist-credentials: false
 

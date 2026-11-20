@@ -18,6 +18,8 @@ module.exports = [
         module: 'readonly',
         process: 'readonly',
         require: 'readonly',
+        structuredClone: 'readonly',
+        globalThis: 'readonly',
       },
     },
   },
