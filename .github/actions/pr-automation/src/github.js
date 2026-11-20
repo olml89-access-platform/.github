@@ -23,7 +23,12 @@ async function request(url, options = {}) {
 
   if (!response.ok) {
     const message = payload?.message || response.statusText;
-    throw new Error(`GitHub REST API ${response.status}: ${message}`);
+    const permissions = response.headers?.get('X-Accepted-GitHub-Permissions');
+
+    throw new Error(
+      `GitHub REST API ${response.status}: ${message}` +
+        (permissions ? ` (Accepted permissions: ${permissions})` : ''),
+    );
   }
 
   return payload;
