@@ -1,0 +1,17 @@
+name: PR Project Field Synchronization
+description: Copies configured GitHub Project fields from a linked Issue to its Pull Request.
+
+inputs:
+  token:
+    description: Fine-grained PAT with access to the repositories and organization Project.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Run synchronization
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: node "$ACTION_PATH/src/index.js"

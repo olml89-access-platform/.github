@@ -1,0 +1,21 @@
+# IDEs
+.idea
+.vscode
+
+# Dependencies
+node_modules/
+
+# Test artifacts
+coverage/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Operating system
+.DS_Store
+Thumbs.db

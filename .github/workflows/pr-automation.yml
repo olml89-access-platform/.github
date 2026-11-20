@@ -1,6 +1,17 @@
 name: PR Automation
 
 on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+
+  workflow_call:
+    secrets:
+      PR_TOKEN:
+        required: true
+
   workflow_dispatch:
     inputs:
       pr_number:
@@ -8,10 +19,24 @@ on:
         required: true
         type: number
 
+permissions:
+  contents: read
+
 jobs:
-  bootstrap:
-    name: Bootstrap workflow
+  synchronize:
+    name: Synchronize Issue fields to PR
     runs-on: ubuntu-latest
+
     steps:
-      - name: Confirm manual dispatch
-        run: echo "Manual dispatch enabled for PR #${{ inputs.pr_number }}."
+      - name: Checkout central automation repository
+        uses: actions/checkout@v6
+        with:
+          repository: olml89-access-platform/.github
+          ref: ${{ github.repository == 'olml89-access-platform/.github' && (github.event.pull_request.head.ref || github.ref) || 'main' }}
+          path: .automation
+          persist-credentials: false
+
+      - name: Synchronize Project fields
+        uses: ./.automation/.github/actions/pr-automation
+        with:
+          token: ${{ secrets.PR_TOKEN }}
