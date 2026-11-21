@@ -41,19 +41,19 @@ Run these commands from this repository.
 
 Starts or stops only the `github` service defined in this repository.
 
-| Command | Description |
-|---|---|
-| `just up` | Start the `github` service. |
-| `just down` | Stop the `github` service. |
+| Command     | Description                 |
+| ----------- | --------------------------- |
+| `just up`   | Start the `github` service. |
+| `just down` | Stop the `github` service.  |
 
 ### Full platform mode
 
 Starts or stops all services included in the centralized Compose configuration.
 
-| Command | Description |
-|---|---|
-| `just up all` | Start the complete development environment. |
-| `just down all` | Stop the complete development environment. |
+| Command         | Description                                 |
+| --------------- | ------------------------------------------- |
+| `just up all`   | Start the complete development environment. |
+| `just down all` | Stop the complete development environment.  |
 
 ## Design principles
 
