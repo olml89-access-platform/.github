@@ -44,6 +44,7 @@ function createDependencies(overrides = {}) {
   const calls = {
     getIssue: [],
     addLabelsToIssue: [],
+    updateIssueMilestone: [],
     getProject: [],
     getProjectItems: [],
     addItemToProject: [],
@@ -62,6 +63,11 @@ function createDependencies(overrides = {}) {
       return [];
     },
 
+    updateIssueMilestone: async (args) => {
+      calls.updateIssueMilestone.push(args);
+      return {};
+    },
+
     graphql: async () => ({}),
 
     getProject: async (...args) => {
@@ -76,7 +82,7 @@ function createDependencies(overrides = {}) {
 
     addItemToProject: async (...args) => {
       calls.addItemToProject.push(args);
-      return 'pr-item';
+      return pullRequestItem;
     },
 
     resolveFields: (projectFields, names) => {
@@ -221,50 +227,113 @@ test('synchronizes fields and adds source labels to an existing Project PR item'
       labels: ['bug', 'infrastructure'],
     },
   ]);
+
+  assert.equal(calls.updateIssueMilestone.length, 0);
 });
 
-test('adds the Pull Request to the Project and reloads its items', async () => {
-  let itemRequests = 0;
+test('copies the source Issue milestone to the Pull Request', async () => {
+  const { calls, dependencies } = createDependencies({
+    getIssue: async () => ({
+      ...issue,
+      milestone: {
+        number: 7,
+      },
+    }),
+  });
 
+  await synchronizePullRequest({ pull_request: pullRequest }, repository, dependencies);
+
+  assert.deepEqual(calls.updateIssueMilestone, [
+    {
+      owner: repository.owner,
+      repo: repository.repo,
+      number: 42,
+      milestone: 7,
+    },
+  ]);
+});
+
+test('does not update the Pull Request when its milestone is unchanged', async () => {
+  const { calls, dependencies } = createDependencies({
+    getIssue: async () => ({
+      ...issue,
+      milestone: { number: 7 },
+    }),
+  });
+
+  await synchronizePullRequest(
+    {
+      pull_request: {
+        ...pullRequest,
+        milestone: { number: 7 },
+      },
+    },
+    repository,
+    dependencies,
+  );
+
+  assert.equal(calls.updateIssueMilestone.length, 0);
+});
+
+test('removes the Pull Request milestone when the source Issue has none', async () => {
+  const { calls, dependencies } = createDependencies();
+
+  await synchronizePullRequest(
+    {
+      pull_request: {
+        ...pullRequest,
+        milestone: { number: 9 },
+      },
+    },
+    repository,
+    dependencies,
+  );
+
+  assert.deepEqual(calls.updateIssueMilestone, [
+    {
+      owner: repository.owner,
+      repo: repository.repo,
+      number: 42,
+      milestone: null,
+    },
+  ]);
+});
+
+test('adds the Pull Request to the Project using the returned item', async () => {
   const { calls, dependencies } = createDependencies({
     getProjectItems: async (projectId) => {
       calls.getProjectItems.push(projectId);
-      itemRequests++;
-
-      if (itemRequests === 1) {
-        return [issueItem];
-      }
-
-      return [issueItem, pullRequestItem];
+      return [issueItem];
     },
   });
 
   await synchronizePullRequest({ pull_request: pullRequest }, repository, dependencies);
 
   assert.deepEqual(calls.addItemToProject, [['project-id', 'pr-node']]);
-
-  assert.equal(calls.getProjectItems.length, 2);
+  assert.equal(calls.getProjectItems.length, 1);
   assert.equal(calls.synchronizeFields.length, 1);
+  assert.equal(calls.synchronizeFields[0].pullRequestItem, pullRequestItem);
 });
 
-test('rejects the synchronization if the added Pull Request cannot be retrieved', async () => {
-  let itemRequests = 0;
-
+test('rejects an invalid item returned when adding the Pull Request', async () => {
   const { calls, dependencies } = createDependencies({
     getProjectItems: async (projectId) => {
       calls.getProjectItems.push(projectId);
-      itemRequests++;
-
-      return itemRequests === 1 ? [issueItem] : [issueItem];
+      return [issueItem];
+    },
+    addItemToProject: async (...args) => {
+      calls.addItemToProject.push(args);
+      return null;
     },
   });
 
   await assert.rejects(
     synchronizePullRequest({ pull_request: pullRequest }, repository, dependencies),
-    /was added but could not be retrieved/,
+    /mutation did not return the expected Project item/,
   );
 
   assert.equal(calls.addItemToProject.length, 1);
+  assert.equal(calls.getProjectItems.length, 1);
   assert.equal(calls.synchronizeFields.length, 0);
 });
 

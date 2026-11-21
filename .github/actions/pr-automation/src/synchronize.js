@@ -1,6 +1,6 @@
 'use strict';
 
-const { getIssue, addLabelsToIssue, graphql } = require('./github');
+const { getIssue, addLabelsToIssue, updateIssueMilestone, graphql } = require('./github');
 const { parseIssueReferences } = require('./references');
 const { getProject, getProjectItems, addItemToProject } = require('./project');
 const { resolveFields, synchronizeFields } = require('./fields');
@@ -25,10 +25,33 @@ async function synchronizeLabels(issue, pullRequest, repository, addLabels) {
   return labels.length;
 }
 
+async function synchronizeMilestone(issue, pullRequest, repository, updateMilestone) {
+  const milestone = issue.milestone?.number ?? null;
+
+  if ((pullRequest.milestone?.number ?? null) === milestone) {
+    console.log('Milestone: unchanged.');
+    return false;
+  }
+
+  await updateMilestone({
+    owner: repository.owner,
+    repo: repository.repo,
+    number: pullRequest.number,
+    milestone,
+  });
+
+  console.log(
+    milestone === null ? 'Milestone: removed from PR.' : `Milestone: #${milestone} copied to PR.`,
+  );
+
+  return true;
+}
+
 async function synchronizePullRequest(event, repository, dependencies = {}) {
   const {
     getIssue: fetchIssue = getIssue,
     addLabelsToIssue: applyLabels = addLabelsToIssue,
+    updateIssueMilestone: applyMilestone = updateIssueMilestone,
     graphql: executeGraphql = graphql,
     getProject: fetchProject = getProject,
     getProjectItems: fetchProjectItems = getProjectItems,
@@ -78,12 +101,19 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
     );
   }
 
+  const milestoneUpdated = await synchronizeMilestone(
+    issue,
+    pullRequest,
+    repository,
+    applyMilestone,
+  );
+
   const project = await fetchProject(projectOwner, projectNumber);
 
   console.log(`Loaded Project "${project.title}" (#${projectNumber}).`);
 
   const fields = resolveProjectFields(project.fields.nodes, fieldNames);
-  let items = await fetchProjectItems(project.id);
+  const items = await fetchProjectItems(project.id);
 
   const issueItem = items.find((item) => item.content?.id === issue.node_id);
 
@@ -99,28 +129,12 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
   if (!pullRequestItem) {
     console.log(`Adding PR #${pullRequest.number} to Project #${projectNumber}.`);
 
-    const addedItem = await addProjectItem(project.id, pullRequest.node_id);
+    pullRequestItem = await addProjectItem(project.id, pullRequest.node_id);
 
-    console.log(`Project item mutation returned: ${JSON.stringify(addedItem)}`);
-
-    // Reload the Project items to obtain the actual PR item and field values.
-    items = await fetchProjectItems(project.id);
-
-    pullRequestItem = items.find((item) => item.content?.id === pullRequest.node_id);
-
-    if (!pullRequestItem) {
-      console.log(
-        `PR node ID: ${pullRequest.node_id}. ` +
-          `Project item IDs: ${JSON.stringify(
-            items.map((item) => ({
-              id: item.id,
-              contentId: item.content?.id ?? null,
-            })),
-          )}`,
-      );
-
+    if (!pullRequestItem?.id || pullRequestItem.content?.id !== pullRequest.node_id) {
       throw new Error(
-        `PR #${pullRequest.number} was added but could not be retrieved from Project #${projectNumber}.`,
+        `PR #${pullRequest.number} was added to Project #${projectNumber}, ` +
+          'but the mutation did not return the expected Project item.',
       );
     }
   }
@@ -140,6 +154,7 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
       `${fieldResult.updated} fields updated, ` +
       `${fieldResult.cleared} cleared, ` +
       `${fieldResult.unchanged} unchanged, ` +
+      `${milestoneUpdated ? 1 : 0} milestone(s) updated, ` +
       `${labelCount} source labels applied.`,
   );
 }

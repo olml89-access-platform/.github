@@ -91,7 +91,48 @@ const ADD_ITEM_MUTATION = `
       projectId: $projectId
       contentId: $contentId
     }) {
-      item { id }
+      item {
+        id
+        content {
+          ... on Issue { id }
+          ... on PullRequest { id }
+        }
+        fieldValues(first: 100) {
+          nodes {
+            __typename
+
+            ... on ProjectV2ItemFieldSingleSelectValue {
+              field { ... on ProjectV2FieldCommon { id } }
+              optionId
+            }
+
+            ... on ProjectV2ItemFieldMultiSelectValue {
+              field { ... on ProjectV2FieldCommon { id } }
+              options { id }
+            }
+
+            ... on ProjectV2ItemFieldTextValue {
+              field { ... on ProjectV2FieldCommon { id } }
+              text
+            }
+
+            ... on ProjectV2ItemFieldNumberValue {
+              field { ... on ProjectV2FieldCommon { id } }
+              number
+            }
+
+            ... on ProjectV2ItemFieldDateValue {
+              field { ... on ProjectV2FieldCommon { id } }
+              date
+            }
+
+            ... on ProjectV2ItemFieldIterationValue {
+              field { ... on ProjectV2FieldCommon { id } }
+              iterationId
+            }
+          }
+        }
+      }
     }
   }
 `;
