@@ -1,0 +1,6 @@
+name: access-platform
+
+include:
+  - path:
+      - ../qr-api/compose.yaml
+      - ../qr-api/compose.override.yaml

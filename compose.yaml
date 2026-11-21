@@ -1,4 +1,4 @@
-name: access-platform
+name: access-platform-github
 
 services:
   github:

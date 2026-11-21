@@ -2,11 +2,39 @@
 build:
     docker compose build
 
-up:
-    docker compose up -d
+up target="":
+    #!/usr/bin/env bash
+    set -eu
 
-down:
-    docker compose down
+    case "{{target}}" in
+        all)
+            docker compose up -d
+            ;;
+        "")
+            docker compose -f compose.yaml up -d
+            ;;
+        *)
+            echo "Usage: just up [all]" >&2
+            exit 1
+            ;;
+    esac
+
+down target="":
+    #!/usr/bin/env bash
+    set -eu
+
+    case "{{target}}" in
+        all)
+            docker compose down
+            ;;
+        "")
+            docker compose -f compose.yaml down
+            ;;
+        *)
+            echo "Usage: just down [all]" >&2
+            exit 1
+            ;;
+    esac
 
 bash:
     docker compose exec github bash
