@@ -83,7 +83,7 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
   console.log(`Loaded Project "${project.title}" (#${projectNumber}).`);
 
   const fields = resolveProjectFields(project.fields.nodes, fieldNames);
-  let items = await fetchProjectItems(project.id);
+  const items = await fetchProjectItems(project.id);
 
   const issueItem = items.find((item) => item.content?.id === issue.node_id);
 
@@ -99,28 +99,12 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
   if (!pullRequestItem) {
     console.log(`Adding PR #${pullRequest.number} to Project #${projectNumber}.`);
 
-    const addedItem = await addProjectItem(project.id, pullRequest.node_id);
+    pullRequestItem = await addProjectItem(project.id, pullRequest.node_id);
 
-    console.log(`Project item mutation returned: ${JSON.stringify(addedItem)}`);
-
-    // Reload the Project items to obtain the actual PR item and field values.
-    items = await fetchProjectItems(project.id);
-
-    pullRequestItem = items.find((item) => item.content?.id === pullRequest.node_id);
-
-    if (!pullRequestItem) {
-      console.log(
-        `PR node ID: ${pullRequest.node_id}. ` +
-          `Project item IDs: ${JSON.stringify(
-            items.map((item) => ({
-              id: item.id,
-              contentId: item.content?.id ?? null,
-            })),
-          )}`,
-      );
-
+    if (!pullRequestItem?.id || pullRequestItem.content?.id !== pullRequest.node_id) {
       throw new Error(
-        `PR #${pullRequest.number} was added but could not be retrieved from Project #${projectNumber}.`,
+        `PR #${pullRequest.number} was added to Project #${projectNumber}, ` +
+          'but the mutation did not return the expected Project item.',
       );
     }
   }
