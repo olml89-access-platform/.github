@@ -1,6 +1,6 @@
 'use strict';
 
-const { getIssue, addLabelsToIssue, graphql } = require('./github');
+const { getIssue, addLabelsToIssue, updateIssueMilestone, graphql } = require('./github');
 const { parseIssueReferences } = require('./references');
 const { getProject, getProjectItems, addItemToProject } = require('./project');
 const { resolveFields, synchronizeFields } = require('./fields');
@@ -25,10 +25,33 @@ async function synchronizeLabels(issue, pullRequest, repository, addLabels) {
   return labels.length;
 }
 
+async function synchronizeMilestone(issue, pullRequest, repository, updateMilestone) {
+  const milestone = issue.milestone?.number ?? null;
+
+  if ((pullRequest.milestone?.number ?? null) === milestone) {
+    console.log('Milestone: unchanged.');
+    return false;
+  }
+
+  await updateMilestone({
+    owner: repository.owner,
+    repo: repository.repo,
+    number: pullRequest.number,
+    milestone,
+  });
+
+  console.log(
+    milestone === null ? 'Milestone: removed from PR.' : `Milestone: #${milestone} copied to PR.`,
+  );
+
+  return true;
+}
+
 async function synchronizePullRequest(event, repository, dependencies = {}) {
   const {
     getIssue: fetchIssue = getIssue,
     addLabelsToIssue: applyLabels = addLabelsToIssue,
+    updateIssueMilestone: applyMilestone = updateIssueMilestone,
     graphql: executeGraphql = graphql,
     getProject: fetchProject = getProject,
     getProjectItems: fetchProjectItems = getProjectItems,
@@ -78,6 +101,13 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
     );
   }
 
+  const milestoneUpdated = await synchronizeMilestone(
+    issue,
+    pullRequest,
+    repository,
+    applyMilestone,
+  );
+
   const project = await fetchProject(projectOwner, projectNumber);
 
   console.log(`Loaded Project "${project.title}" (#${projectNumber}).`);
@@ -124,6 +154,7 @@ async function synchronizePullRequest(event, repository, dependencies = {}) {
       `${fieldResult.updated} fields updated, ` +
       `${fieldResult.cleared} cleared, ` +
       `${fieldResult.unchanged} unchanged, ` +
+      `${milestoneUpdated ? 1 : 0} milestone(s) updated, ` +
       `${labelCount} source labels applied.`,
   );
 }

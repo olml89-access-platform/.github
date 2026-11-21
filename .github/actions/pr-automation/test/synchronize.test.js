@@ -44,6 +44,7 @@ function createDependencies(overrides = {}) {
   const calls = {
     getIssue: [],
     addLabelsToIssue: [],
+    updateIssueMilestone: [],
     getProject: [],
     getProjectItems: [],
     addItemToProject: [],
@@ -60,6 +61,11 @@ function createDependencies(overrides = {}) {
     addLabelsToIssue: async (args) => {
       calls.addLabelsToIssue.push(args);
       return [];
+    },
+
+    updateIssueMilestone: async (args) => {
+      calls.updateIssueMilestone.push(args);
+      return {};
     },
 
     graphql: async () => ({}),
@@ -219,6 +225,76 @@ test('synchronizes fields and adds source labels to an existing Project PR item'
       repo: repository.repo,
       number: 42,
       labels: ['bug', 'infrastructure'],
+    },
+  ]);
+
+  assert.equal(calls.updateIssueMilestone.length, 0);
+});
+
+test('copies the source Issue milestone to the Pull Request', async () => {
+  const { calls, dependencies } = createDependencies({
+    getIssue: async () => ({
+      ...issue,
+      milestone: {
+        number: 7,
+      },
+    }),
+  });
+
+  await synchronizePullRequest({ pull_request: pullRequest }, repository, dependencies);
+
+  assert.deepEqual(calls.updateIssueMilestone, [
+    {
+      owner: repository.owner,
+      repo: repository.repo,
+      number: 42,
+      milestone: 7,
+    },
+  ]);
+});
+
+test('does not update the Pull Request when its milestone is unchanged', async () => {
+  const { calls, dependencies } = createDependencies({
+    getIssue: async () => ({
+      ...issue,
+      milestone: { number: 7 },
+    }),
+  });
+
+  await synchronizePullRequest(
+    {
+      pull_request: {
+        ...pullRequest,
+        milestone: { number: 7 },
+      },
+    },
+    repository,
+    dependencies,
+  );
+
+  assert.equal(calls.updateIssueMilestone.length, 0);
+});
+
+test('removes the Pull Request milestone when the source Issue has none', async () => {
+  const { calls, dependencies } = createDependencies();
+
+  await synchronizePullRequest(
+    {
+      pull_request: {
+        ...pullRequest,
+        milestone: { number: 9 },
+      },
+    },
+    repository,
+    dependencies,
+  );
+
+  assert.deepEqual(calls.updateIssueMilestone, [
+    {
+      owner: repository.owner,
+      repo: repository.repo,
+      number: 42,
+      milestone: null,
     },
   ]);
 });

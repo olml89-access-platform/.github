@@ -76,9 +76,21 @@ async function addLabelsToIssue({ owner, repo, number, labels }) {
   );
 }
 
+async function updateIssueMilestone({ owner, repo, number, milestone }) {
+  return request(
+    `${apiUrl}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues/${number}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ milestone }),
+    },
+  );
+}
+
 module.exports = {
   graphql,
   getIssue,
   getPullRequest,
   addLabelsToIssue,
+  updateIssueMilestone,
 };
