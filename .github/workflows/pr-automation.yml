@@ -36,6 +36,22 @@ jobs:
           path: .automation
           persist-credentials: false
 
+      - name: Verify PR_TOKEN access
+        env:
+          GH_TOKEN: ${{ secrets.PR_TOKEN }}
+        run: |
+          curl -fsS \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/user \
+            | jq -r '"Authenticated as: @\(.login)"'
+
+          curl -fsS \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }} \
+            | jq -r '"Repository: \(.full_name); private: \(.private)"'
+
       - name: Synchronize Project fields
         uses: ./.automation/.github/actions/pr-automation
         with:
