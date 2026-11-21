@@ -9,26 +9,26 @@ down:
     docker compose down
 
 bash:
-    docker compose exec github-dev bash
+    docker compose exec github bash
 
 # Dependencies
 install:
-    docker compose exec github-dev npm ci
+    docker compose exec github npm ci
 
 # Quality checks
 lint:
-    docker compose exec github-dev npm run lint
+    docker compose exec github npm run lint
 
 test:
-    docker compose exec github-dev npm test
+    docker compose exec github npm test
 
 format:
-    docker compose exec github-dev npm run format
+    docker compose exec github npm run format
 
 format-check:
-    docker compose exec github-dev npm run format:check
+    docker compose exec github npm run format:check
 
 actionlint:
-    docker compose exec github-dev actionlint
+    docker compose exec github actionlint
 
 check: lint test format-check actionlint

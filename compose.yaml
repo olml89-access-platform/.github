@@ -1,5 +1,7 @@
+name: access-platform
+
 services:
-  github-dev:
+  github:
     build:
       context: .
       dockerfile: .docker/Dockerfile
